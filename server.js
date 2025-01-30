@@ -10,11 +10,20 @@ const postRoutes = require('./routes/postRoutes');
 
 const app = express();
 
+// CORS Configuration
+app.use(
+  cors({
+    origin: ['http://localhost:5173', 'https://yourfrontenddomain.com'], // Allow both local and deployed frontend
+    credentials: true, // Allow cookies/auth headers
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed HTTP methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+  })
+);
+
+// Handle Preflight Requests
+app.options('*', cors()); // Allow all preflight requests
+
 // Middleware
-app.use(cors({
-  origin: 'http://localhost:5173', // Adjust to match your frontend URL
-  credentials: true,
-}));
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(
@@ -22,7 +31,11 @@ app.use(
     secret: sessionSecret, // Ensure this is a strong secret key
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false } 
+    cookie: {
+      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+      httpOnly: true, // Prevent client-side JS access
+      sameSite: 'none', // Allow cross-origin cookies
+    },
   })
 );
 
