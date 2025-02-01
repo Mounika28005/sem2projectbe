@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const { port, sessionSecret } = require('./config/config');
 require('./connection/db'); // Initialize database connection
-
+const MongoStore = require('connect-mongo');
 const authRoutes = require('./routes/authRoutes');
 const postRoutes = require('./routes/postRoutes');
 
@@ -26,18 +26,13 @@ app.options('*', cors()); // Allow all preflight requests
 // Middleware
 app.use(bodyParser.json());
 app.use(express.json());
-app.use(
-  session({
-    secret: sessionSecret, // Ensure this is a strong secret key
-    resave: false,
-    saveUninitialized: true,
-    cookie: {
-      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-      httpOnly: true, // Prevent client-side JS access
-      sameSite: 'none', // Allow cross-origin cookies
-    },
-  })
-);
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
+  cookie: { secure: false } // Change to true if using HTTPS
+}));
 
 // Routes
 app.use('/api/auth', authRoutes);
